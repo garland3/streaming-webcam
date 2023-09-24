@@ -28,6 +28,7 @@ python client-with-webcam.py
 **To Run**:
 
 ```bash
+# conda activate FastSAM
 python webapp-streaming.py
 ```
 
@@ -39,3 +40,12 @@ python webapp-streaming.py
 4. Runs Detectron2 on the image
 5. Overlays results on the image
 6. Displays the image in a connected browser
+
+
+### other
+
+Extracting frames from video
+
+```bash
+ffmpeg -i input.mp4 -vf "fps=1" frame-%04d.jpg
+```

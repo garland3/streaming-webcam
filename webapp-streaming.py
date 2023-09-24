@@ -1,5 +1,8 @@
 # conda activate FastSAM
 
+SENDER_IP = "192.168.0.115"
+ 
+ 
 from flask import Flask, Response
 import cv2
 import struct
@@ -76,8 +79,8 @@ def add_fps_to_frame(frame, fps):
 
 def generate_frames():
     # while True:
-    sender_ip = "192.168.0.183"
-    for frame in receive_and_process_frames(sender_ip):
+   
+    for frame in receive_and_process_frames(SENDER_IP):
         start_time = time.time()
         # Assuming `frame` is the image you got from the webcam
         processed_frame = predict_and_visualize(frame, predictor)
