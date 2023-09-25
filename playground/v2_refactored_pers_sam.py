@@ -54,7 +54,7 @@ model = model.to(device)
 # Step 1: Image features encoding
 with torch.no_grad():
     ref_feat = model.get_image_embeddings(pixel_values.to(device))
-    
+
 # %%
 ref_feat.shape, pixel_values.shape
 # %%
@@ -70,10 +70,14 @@ print(f"Before prepare_mask, ref_mask shape is {ref_mask.shape}")
 ref_mask = prepare_mask(ref_mask)
 print(f"After prepare_mask, ref_mask shape is {ref_mask.shape}")
 # %%
-print(f"Before interpolate, ref_mask shape is {ref_mask.shape}, and ref_feat shape is {ref_feat.shape}")
+print(
+    f"Before interpolate, ref_mask shape is {ref_mask.shape}, and ref_feat shape is {ref_feat.shape}"
+)
 ref_mask = F.interpolate(ref_mask, size=ref_feat.shape[0:2], mode="bilinear")
 ref_mask = ref_mask.squeeze()[0]
-print(f"After interpolate, ref_mask shape is {ref_mask.shape}, and ref_feat shape is {ref_feat.shape}")
+print(
+    f"After interpolate, ref_mask shape is {ref_mask.shape}, and ref_feat shape is {ref_feat.shape}"
+)
 # %%
 
 # Step 3: Target feature extraction
@@ -93,14 +97,16 @@ Next, using this target embedding, we can acquire a location confidence map of w
 """
 
 # %%
-# ------------ process the new image. 
+# ------------ process the new image.
 # %%
 
 filename_test_img = "/home/garlan/git/streamingwebcam/imgs/frame-0134.jpg"
 test_image = Image.open(filename_test_img).convert("RGB").convert("RGB")
 inputs = processor(images=test_image, return_tensors="pt").to(device)
 pixel_values = inputs.pixel_values
-print(f"pixel_values shape is {pixel_values.shape} and the PIL Image test_image size is {test_image.size}")
+print(
+    f"pixel_values shape is {pixel_values.shape} and the PIL Image test_image size is {test_image.size}"
+)
 # image feature encoding
 with torch.no_grad():
     test_feat = model.get_image_embeddings(pixel_values).squeeze()
@@ -138,35 +144,41 @@ n_loops = 5
 for i in range(n_loops):
     # First-step prediction or cascaded post-refinement
     with torch.no_grad():
-        outputs = model(
+        params = dict(
             input_points=inputs.input_points,
             input_labels=inputs.input_labels,
-            input_masks=input_masks,
             image_embeddings=test_feat.unsqueeze(0),
-            multimask_output=(input_masks is not None),
-            attention_similarity=attention_similarity if input_masks is None else None,
-            target_embedding=target_embedding if input_masks is None else None,
+            multimask_output=True,
+            attention_similarity=attention_similarity,
+            target_embedding=target_embedding,
         )
-    if i== n_loops - 1:
-        break
-    if i==0:
-        input_masks = outputs.pred_masks.squeeze(1)[:, best_idx : best_idx + 1, :, :]
-        continue
-    
+        if i > 0:
+            params["input_masks"] = outputs.pred_masks.squeeze(1)[
+                :, best_idx : best_idx + 1, :, :
+            ]
+
+        outputs = model(**params)
+
     # Post-process masks and find best index
-    masks = processor.image_processor.post_process_masks(
-        outputs.pred_masks.cpu(),
-        inputs["original_sizes"].cpu(),
-        inputs["reshaped_input_sizes"].cpu()
-    )[0].squeeze().numpy()
-    
+    masks = (
+        processor.image_processor.post_process_masks(
+            outputs.pred_masks.cpu(),
+            inputs["original_sizes"].cpu(),
+            inputs["reshaped_input_sizes"].cpu(),
+        )[0]
+        .squeeze()
+        .numpy()
+    )
     best_idx = torch.argmax(outputs.iou_scores).item()
+    if i == n_loops - 1:
+        break
+
     v = np.nonzero(masks[best_idx])
     # print(f"V is {v}")
     y, x = v
     x_min, x_max, y_min, y_max = x.min(), x.max(), y.min(), y.max()
     input_boxes = [[[x_min, y_min, x_max, y_max]]]
-    
+
     # Update inputs
     inputs = processor(
         test_image,
@@ -175,7 +187,7 @@ for i in range(n_loops):
         input_boxes=input_boxes,
         return_tensors="pt",
     ).to(device)
-    
+
     # Prepare masks for the next iteration
     input_masks = outputs.pred_masks.squeeze(1)[:, best_idx : best_idx + 1, :, :]
 
@@ -192,6 +204,7 @@ axes.imshow(np.array(test_image))
 show_mask(masks[best_idx], axes)
 axes.title.set_text(f"Predicted mask")
 axes.axis("off")
+plt.savefig("predicted-mask-on-test-image.png")
 
 
 # %%

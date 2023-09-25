@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Image Click</title>
+    <style>
+        .circle {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            background-color: red;
+            border-radius: 50%;
+        }
+    </style>
+</head>
+<body>
+
+<img id="image" src="{{ image_url }}" alt="Image" style="width:{{ width }}px;height:{{ height }}px;">
+
+<div id="coordinates">X: , Y: </div>
+
+<p>Click on the image to get the coordinates.</p>
+<button onclick="clearCircles()">Clear Circles</button>
+
+<p>Submit</p>
+<button onclick="submitCircles()">Submit</button>
+
+{% if segmentation_url %}
+    <p>
+        <img id="segmentation" src="{{ segmentation_url }}" alt="Segmentation" style="width:{{ seg_width }}px;height:{{ seg_height }}px;">
+    </p>
+{% endif %}
+
+<script>
+   // JavaScript to handle image click and send coordinates to server
+   document.getElementById("image").addEventListener("click", function(event) {
+    var x = event.clientX - event.target.offsetLeft;
+    var y = event.clientY - event.target.offsetTop;
+
+    document.getElementById("coordinates").innerText = `X: ${x}, Y: ${y}`;
+    
+     // Create circle element
+    var circle = document.createElement("div");
+    circle.className = "circle";
+    circle.style.left = (x - 5) + "px";
+    circle.style.top = (y - 5) + "px";
+
+    // Append circle to the same parent as the image
+    event.target.parentNode.appendChild(circle);
+
+    
+    // Send coordinates to server
+    fetch(`/click?x=${x}&y=${y}`);
+});
+
+function clearCircles() {   
+    var circles = document.getElementsByClassName("circle");
+    for (var i = 0; i < circles.length; i++) {
+        circles[i].remove();
+    }
+}
+
+function submitCircles() {
+    var circles = document.getElementsByClassName("circle");
+    var x = [];
+    var y = [];
+    for (var i = 0; i < circles.length; i++) {
+        x.push(circles[i].style.left);
+        y.push(circles[i].style.top);
+    }
+    // make a form and submit it.
+    var myform = document.createElement("form");
+    myform.method = "post";
+    myform.action = "/submitpoints";
+    var xinput = document.createElement("input");
+    xinput.type = "text";
+    xinput.name = "x";
+    xinput.value = x;
+    var yinput = document.createElement("input");
+    yinput.type = "text";
+    yinput.name = "y";
+    yinput.value = y;
+    myform.appendChild(xinput);
+    myform.appendChild(yinput);
+    document.body.appendChild(myform);
+    myform.submit();
+}
+</script>
+
+</body>
+</html>

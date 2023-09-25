@@ -90,7 +90,7 @@ num_channels, height, width = test_feat.shape
 print(f"test_feat shape is {test_feat.shape}")
 test_feat = test_feat / test_feat.norm(dim=0, keepdim=True)
 test_feat_reshaped = test_feat.reshape(num_channels, height * width)
-print(f"test_feat_reshaped shape is {test_feat_reshaped.shape}" )
+print(f"test_feat_reshaped shape is {test_feat_reshaped.shape}")
 
 # %%
 sim = target_feat @ test_feat_reshaped

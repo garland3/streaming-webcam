@@ -51,7 +51,7 @@ def prepare_mask(image, target_length=1024):
     return input_mask
 
 
-def point_selection(mask_sim:torch.Tensor, topk=1):
+def point_selection(mask_sim: torch.Tensor, topk=1):
     # Top-1 point selection
     w, h = mask_sim.shape
     topk_xy = mask_sim.flatten(0).topk(topk)[1]

@@ -31,7 +31,9 @@ def show_boxes_on_image(raw_image, boxes):
     plt.show()
 
 
-def show_points_on_image(raw_image, input_points, input_labels=None):
+def show_points_on_image(
+    raw_image, input_points, input_labels=None, save_filename=None
+):
     plt.figure(figsize=(10, 10))
     plt.imshow(raw_image)
     input_points = np.array(input_points)
@@ -41,6 +43,9 @@ def show_points_on_image(raw_image, input_points, input_labels=None):
         labels = np.array(input_labels)
     show_points(input_points, labels, plt.gca())
     plt.axis("on")
+    if save_filename is not None:
+        plt.savefig(save_filename)
+        return
     plt.show()
 
 
